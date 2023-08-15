@@ -20,7 +20,7 @@ from dpdispatcher import dlog
 from dpdispatcher.base_context import BaseContext
 
 # from dpdispatcher.submission import Machine
-from dpdispatcher.utils import RetrySignal, generate_totp, get_sha256, retry, rsync, get_random_second
+from dpdispatcher.utils import RetrySignal, generate_totp, get_sha256, retry, rsync
 
 
 class SSHSession:
@@ -118,10 +118,12 @@ class SSHSession:
 
     @retry(max_retry=6, sleep=1)
     def _setup_ssh(self):
-        # 随机sleep，防止并发连接
-        random_sec = get_random_second(16)
-        dlog.info(f"setup ssh random sleep: {random_sec}s")
-        time.sleep(random_sec)
+        if bool(int(os.environ.get("RANDOM_SLEEP", "0"))):
+            from dpdispatcher.utils import get_random_second
+            # Random sleep to avoid concurrent connection
+            random_sec = get_random_second(16)
+            dlog.info(f"setup ssh random sleep: {random_sec}s")
+            time.sleep(random_sec)
         # machine = self.machine
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy)

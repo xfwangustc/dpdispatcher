@@ -15,7 +15,6 @@ from dargs.dargs import Argument, Variant
 from dpdispatcher import dlog
 from dpdispatcher.JobStatus import JobStatus
 from dpdispatcher.machine import Machine
-from dpdispatcher.utils import get_random_second
 
 # from dpdispatcher.slurm import SlurmResources
 # %%
@@ -245,10 +244,14 @@ class Submission:
                 break
 
             try:
-                random_sec2 = get_random_second(101)
-                sec2 = random_sec2 + check_interval
-                dlog.info(f"watch random sleep: {sec2}s")
-                time.sleep(sec2)
+                if bool(int(os.environ.get("RANDOM_SLEEP", "0"))):
+                    from dpdispatcher.utils import get_random_second
+                    random_sec2 = get_random_second(101)
+                    sec2 = random_sec2 + check_interval
+                    dlog.info(f"watch random sleep: {sec2}s")
+                    time.sleep(sec2)
+                else:
+                    time.sleep(check_interval)
             except (Exception, KeyboardInterrupt, SystemExit) as e:
                 self.submission_to_json()
                 dlog.exception(e)
@@ -270,7 +273,7 @@ class Submission:
 
     def try_download_result(self):
         start_time = time.time()
-        retry_interval = 60  # 每1分钟重试一次
+        retry_interval = 60  # retry every 1 minute
         success = False
         while not success:
             try:
@@ -279,17 +282,17 @@ class Submission:
             except (EOFError, Exception) as e:
                 dlog.exception(e)
                 elapsed_time = time.time() - start_time
-                if elapsed_time < 1800:  # 半小时内
+                if elapsed_time < 1800:  # in 0.5 h
                     dlog.info("Retrying in 1 minute...")
                     time.sleep(retry_interval)
-                elif elapsed_time < 3600:  # 半小时后，但在1小时内
-                    retry_interval = 600  # 每10分钟重试一次
+                elif elapsed_time < 3600:  # between 0.5 h and 1 h
+                    retry_interval = 600  # change retry interval to 10 min
                     dlog.info("Retrying in 10 minutes...")
                     time.sleep(retry_interval)
-                else:  # 超过1小时
+                else:  # > 24 h
                     dlog.info("Maximum retries time reached. Exiting.")
                     break
-    
+
     async def async_run_submission(self, **kwargs):
         """Async interface of run_submission.
 
@@ -513,9 +516,7 @@ class Submission:
     def submission_to_json(self):
         # self.update_submission_state()
         write_str = json.dumps(self.serialize(), indent=4, default=str)
-        submission_file_name = "{submission_hash}.json".format(
-            submission_hash=self.submission_hash
-        )
+        submission_file_name = f"{self.submission_hash}.json"
         self.machine.context.write_file(submission_file_name, write_str=write_str)
 
     @classmethod
@@ -529,9 +530,7 @@ class Submission:
     # def check_if_recover()
 
     def try_recover_from_json(self):
-        submission_file_name = "{submission_hash}.json".format(
-            submission_hash=self.submission_hash
-        )
+        submission_file_name = f"{self.submission_hash}.json"
         if_recover = self.machine.context.check_file_exists(submission_file_name)
         submission = None
         submission_dict = {}
@@ -791,9 +790,7 @@ class Job:
         """
         if len(job_dict.keys()) != 1:
             raise RuntimeError(
-                "json file may be broken, len(job_dict.keys()) must be 1. {job_dict}".format(
-                    job_dict=job_dict
-                )
+                f"json file may be broken, len(job_dict.keys()) must be 1. {job_dict}"
             )
         job_hash = list(job_dict.keys())[0]
 
@@ -875,11 +872,7 @@ class Job:
             #     raise RuntimeError("job:job {job} failed 3 times".format(job=self))
             self.submit_job()
             if self.job_state != JobStatus.unsubmitted:
-                dlog.info(
-                    "job: {job_hash} submit; job_id is {job_id}".format(
-                        job_hash=self.job_hash, job_id=self.job_id
-                    )
-                )
+                dlog.info(f"job: {self.job_hash} submit; job_id is {self.job_id}")
             if self.resources.wait_time != 0:
                 time.sleep(self.resources.wait_time)
             # self.get_job_state()
