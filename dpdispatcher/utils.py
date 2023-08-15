@@ -3,9 +3,14 @@ import hashlib
 import hmac
 import struct
 import subprocess
+<<<<<<< HEAD
 import random
+=======
+>>>>>>> origin/ynyuan
 import time
 from typing import Callable, Optional, Type, Union
+
+import numpy as np
 
 from dpdispatcher import dlog
 
@@ -33,10 +38,12 @@ def get_sha256(filename):
     sha256 = h.hexdigest()
     return sha256
 
+
 def get_random_second(maxSec: int):
     # random sleep second
     random_number = random.choice(range(1, 10))
     return random_number
+
 
 def hotp(key: str, period: int, token_length: int = 6, digest="sha1"):
     key_ = base64.b32decode(key.upper() + "=" * ((8 - len(key)) % 8))

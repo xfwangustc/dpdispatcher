@@ -292,7 +292,7 @@ class Submission:
                 else:  # > 24 h
                     dlog.info("Maximum retries time reached. Exiting.")
                     break
-    
+
     async def async_run_submission(self, **kwargs):
         """Async interface of run_submission.
 
