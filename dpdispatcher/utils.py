@@ -3,14 +3,9 @@ import hashlib
 import hmac
 import struct
 import subprocess
-<<<<<<< HEAD
 import random
-=======
->>>>>>> origin/ynyuan
 import time
 from typing import Callable, Optional, Type, Union
-
-import numpy as np
 
 from dpdispatcher import dlog
 
