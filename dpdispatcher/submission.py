@@ -15,7 +15,6 @@ from dargs.dargs import Argument, Variant
 from dpdispatcher import dlog
 from dpdispatcher.JobStatus import JobStatus
 from dpdispatcher.machine import Machine
-from dpdispatcher.utils import get_random_second
 
 # from dpdispatcher.slurm import SlurmResources
 # %%
@@ -245,10 +244,14 @@ class Submission:
                 break
 
             try:
-                random_sec2 = get_random_second(101)
-                sec2 = random_sec2 + check_interval
-                dlog.info(f"watch random sleep: {sec2}s")
-                time.sleep(sec2)
+                if bool(int(os.environ.get("RANDOM_SLEEP", "0"))):
+                    from dpdispatcher.utils import get_random_second
+                    random_sec2 = get_random_second(101)
+                    sec2 = random_sec2 + check_interval
+                    dlog.info(f"watch random sleep: {sec2}s")
+                    time.sleep(sec2)
+                else:
+                    time.sleep(check_interval)
             except (Exception, KeyboardInterrupt, SystemExit) as e:
                 self.submission_to_json()
                 dlog.exception(e)
@@ -279,14 +282,14 @@ class Submission:
             except (EOFError, Exception) as e:
                 dlog.exception(e)
                 elapsed_time = time.time() - start_time
-                if elapsed_time < 1800:  # 半小时内
+                if elapsed_time < 1800:  # in 0.5 h
                     dlog.info("Retrying in 1 minute...")
                     time.sleep(retry_interval)
-                elif elapsed_time < 3600:  # 半小时后，但在1小时内
-                    retry_interval = 600  # 每10分钟重试一次
+                elif elapsed_time < 3600:  # between 0.5 h and 1 h
+                    retry_interval = 600  # change retry interval to 10 min
                     dlog.info("Retrying in 10 minutes...")
                     time.sleep(retry_interval)
-                else:  # 超过1小时
+                else:  # > 24 h
                     dlog.info("Maximum retries time reached. Exiting.")
                     break
     
