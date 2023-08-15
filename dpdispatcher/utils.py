@@ -36,7 +36,7 @@ def get_sha256(filename):
 
 def get_random_second(maxSec: int):
     # random sleep second
-    random_number = random.choice(range(1, 10))
+    random_number = random.choice(range(1, maxSec))
     return random_number
 
 
