@@ -645,9 +645,12 @@ class SSHContext(BaseContext):
         # job_dirs,
         # remote_down_files,
         check_exists=False,
+        raise_file_not_found=False,
         mark_failure=True,
         back_error=False,
     ):
+        if bool(int(os.environ.get("RAISE_DOWNLOAD_FILE_NOT_FOUND", "0"))):
+            check_exists, raise_file_not_found = True, True
         self.ssh_session.ensure_alive()
         file_list = []
         # for ii in job_dirs :
@@ -659,6 +662,10 @@ class SSHContext(BaseContext):
                 if check_exists:
                     if self.check_file_exists(file_name):
                         file_list.append(file_name)
+                    elif raise_file_not_found:
+                        raise FileNotFoundError(
+                            "SSH cannot find download file %s" % file_name
+                        )
                     elif mark_failure:
                         with open(
                             os.path.join(

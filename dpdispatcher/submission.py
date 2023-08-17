@@ -279,7 +279,10 @@ class Submission:
             try:
                 self.download_jobs()
                 success = True
-            except (EOFError, Exception) as e:
+            except (FileNotFoundError) as e:
+                dlog.exception(e)
+                break
+            except (Exception) as e:
                 dlog.exception(e)
                 elapsed_time = time.time() - start_time
                 if elapsed_time < 1800:  # in 0.5 h
@@ -289,7 +292,7 @@ class Submission:
                     retry_interval = 600  # change retry interval to 10 min
                     dlog.info("Retrying in 10 minutes...")
                     time.sleep(retry_interval)
-                else:  # > 24 h
+                else:  # > 1 h
                     dlog.info("Maximum retries time reached. Exiting.")
                     break
 
