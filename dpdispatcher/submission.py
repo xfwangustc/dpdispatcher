@@ -281,7 +281,7 @@ class Submission:
                 success = True
             except (FileNotFoundError) as e:
                 dlog.exception(e)
-                break
+                raise e
             except (Exception) as e:
                 dlog.exception(e)
                 elapsed_time = time.time() - start_time
@@ -294,7 +294,7 @@ class Submission:
                     time.sleep(retry_interval)
                 else:  # > 1 h
                     dlog.info("Maximum retries time reached. Exiting.")
-                    break
+                    raise e
 
     async def async_run_submission(self, **kwargs):
         """Async interface of run_submission.
